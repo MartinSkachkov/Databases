@@ -1,3 +1,4 @@
+```sql
 use movies;
 
 -- Напишете заявка, която извежда адресът на студио ‘MGM’
@@ -25,3 +26,4 @@ where NETWORTH > 10000000;
 select NAME
 from MOVIESTAR
 where GENDER = 'M' or ADDRESS like '%Malibu%'
+```
