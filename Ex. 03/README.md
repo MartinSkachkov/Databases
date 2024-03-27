@@ -104,7 +104,7 @@ where ram <= all (select distinct ram from pc) and speed >= all (select speed
 ```
 
 ### **Задачи върху базата SHIPS**
-```sql``
+```sql
 use ships
 
 -- Напишете заявка, която извежда страните, чиито кораби са с
