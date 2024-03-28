@@ -26,3 +26,65 @@ where COUNTRY = 'Gt.Britain'
 select COALESCE(MOVIESTAR.NAME, MOVIEEXEC.NAME) AS NAME, BIRTHDATE, NETWORTH
 from MOVIESTAR full join MOVIEEXEC on MOVIESTAR.NAME = MOVIEEXEC.NAME
 ```
+
+### **Задачи върху базата MOVIES**
+
+```sql
+use movies
+
+-- Напишете заявка, която за всеки филм, по-дълъг от 120 минути,
+-- извежда заглавие, година, име и адрес на студио.
+select TITLE, YEAR, STUDIONAME, ADDRESS
+from MOVIE join STUDIO on STUDIONAME = NAME
+where LENGTH > 120;
+
+-- Напишете заявка, която извежда името на студиото и имената на
+-- актьорите, участвали във филми, произведени от това студио,
+-- подредени по име на студио.
+select distinct STUDIONAME, STARNAME
+from MOVIE join STARSIN on TITLE = MOVIETITLE and YEAR = MOVIEYEAR
+order by STUDIONAME asc;
+
+-- Напишете заявка, която извежда имената на продуцентите на филмите,
+-- в които е играл Harrison Ford.
+select distinct NAME
+from MOVIE join STARSIN on TITLE = MOVIETITLE and YEAR = MOVIEYEAR
+		   join MOVIEEXEC on PRODUCERC# = CERT#
+where STARNAME = 'Harrison Ford';
+
+-- Напишете заявка, която извежда имената на актрисите, играли във
+-- филми на MGM.
+select NAME
+from MOVIE join STARSIN on TITLE = MOVIETITLE and YEAR = MOVIEYEAR
+		   join MOVIESTAR on NAME = STARNAME 
+where STUDIONAME = 'MGM' and GENDER = 'F';
+
+-- Напишете заявка, която извежда името на продуцента и имената на
+-- филмите, продуцирани от продуцента на 'Star Wars'.
+select TITLE, NAME
+from MOVIE join MOVIEEXEC on PRODUCERC# = CERT#
+where NAME = 'George Lucas';
+
+-- Напишете заявка, която извежда имената на актьорите не участвали в
+-- нито един филм.
+select *
+from MOVIESTAR left join STARSIN on NAME = STARNAME
+where STARNAME is null;
+```
+
+### **Задачи върху базата PC**
+
+```sql
+use pc
+
+-- Напишете заявка, която извежда производител, модел и тип на продукт
+-- за тези производители, за които съответния продукт не се продава
+-- (няма го в таблиците PC, лаптоп или принтер).
+select maker, product.model, type
+from product left join (select model from laptop
+				   union
+				   select model from pc
+				   union
+				   select model from printer) av_models on product.model = av_models.model
+where av_models.model is null;
+```
