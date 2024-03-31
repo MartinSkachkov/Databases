@@ -116,3 +116,54 @@ select screen, MAX(price) - MIN(price) as price_diff
 from laptop
 group by screen;
 ```
+
+### **Задачи върху базата SHIPS**
+
+```sql
+use ships
+
+-- Напишете заявка, която извежда броя на класовете кораби
+select COUNT(CLASS) as CLASSCOUNT
+from CLASSES;
+
+-- Напишете заявка, която извежда средния брой на оръжия за всички кораби,
+-- пуснати на вода
+select AVG(NUMGUNS) as avg_numguns
+from CLASSES join SHIPS on CLASSES.CLASS = SHIPS.CLASS;
+
+-- Напишете заявка, която извежда за всеки клас първата и последната година, в
+-- която кораб от съответния клас е пуснат на вода
+select CLASS, MIN(LAUNCHED) as first_launch, MAX(LAUNCHED) as last_launch
+from SHIPS
+group by CLASS;
+
+-- Напишете заявка, която извежда броя на корабите потънали в битка според класа
+select CLASS, COUNT(RESULT) as NUMOFSUNK
+from SHIPS join OUTCOMES on NAME = SHIP
+where RESULT = 'sunk'
+group by CLASS;
+
+select CLASS, COUNT(RESULT) as NUMOFSUNK
+from SHIPS left join OUTCOMES on NAME = SHIP and RESULT = 'sunk'
+group by CLASS;
+
+-- Напишете заявка, която извежда броя на корабите потънали в битка според
+-- класа, за тези класове с повече от 4 пуснати на вода кораба
+select t1.CLASS, t2.SUNKCOUNT
+from (select CLASS, COUNT(LAUNCHED) as LAUNCHNUM
+	  from SHIPS
+	  group by CLASS
+	  having COUNT(LAUNCHED) > 4) t1 -- таблица с броя на пуснатите кораби от всеки клас
+	  join 
+	  (select CLASS, COUNT(RESULT) as SUNKCOUNT
+	  from SHIPS join OUTCOMES on NAME = SHIP and RESULT = 'sunk'
+	  group by CLASS) t2 -- таблица с броя потънали кораби от всеки клас
+	  on t1.CLASS = t2.CLASS; -- ако даден клас има потънал кораб и пуснат 
+
+-- Напишете заявка, която извежда средното тегло на корабите, за всяка страна. 
+select COUNTRY, AVG(DISPLACEMENT) as avg_weight
+from CLASSES
+group by COUNTRY;
+
+
+```
