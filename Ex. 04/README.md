@@ -88,3 +88,37 @@ from product left join (select model from laptop
 				   select model from printer) av_models on product.model = av_models.model
 where av_models.model is null;
 ```
+
+### **Задачи върху базата SHIPS**
+```sql
+use ships
+
+-- Напишете заявка, която за всеки кораб извежда името му, държавата,
+-- броя оръдия и годината на пускане (launched).
+select NAME, COUNTRY, NUMGUNS, LAUNCHED
+from CLASSES join SHIPS on CLASSES.CLASS = SHIPS.CLASS;
+
+-- Напишете заявка, която извежда имената на корабите, участвали в битка
+-- от 1942г.
+select SHIP
+from OUTCOMES join BATTLES on BATTLE = NAME
+where YEAR(DATE) = 1942;
+
+-- За всяка страна изведете имената на корабите, които никога не са
+-- участвали в битка.
+select distinct *
+from CLASSES join SHIPS on CLASSES.CLASS = SHIPS.CLASS
+			 left join OUTCOMES on NAME = SHIP 
+where RESULT is null
+
+-- Имената на класовете, за които няма кораб, пуснат на вода
+-- (launched) след 1921 г. Ако за класа няма пуснат никакъв кораб,
+-- той също трябва да излезе в резултата.
+select *
+from CLASSES left join SHIPS ON CLASSES.CLASS = SHIPS.CLASS AND LAUNCHED > 1921
+where NAME is null;
+
+select *
+from CLASSES
+where CLASS not in (select LAUNCHED from SHIPS where LAUNCHED > 1921);
+```
