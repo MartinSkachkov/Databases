@@ -131,3 +131,85 @@ select CLASS
 from SHIPS
 group by CLASS
 having MAX(LAUNCHED) <= 1921
+
+-------------------------------------------------------------------------------------
+use movies
+
+-- 1. Всички филми, чието заглавие съдържа едновременно думите 'Star' и 'Trek' 
+--    (не непременно в този ред). Резултатите да се подредят по година (първо 
+--    най-новите филми), а филмите от една и съща година - по азбучен ред.
+select *
+from movie
+where TITLE like '%Star%' and TITLE like '%Trek%'
+order by YEAR desc, TITLE asc
+
+-- 2. Заглавията и годините на филмите, в които са играли звезди, родени между 
+--    1.1.1970 и 1.7.1980
+select distinct MOVIETITLE, MOVIEYEAR
+from STARSIN join MOVIESTAR on STARNAME = NAME
+where BIRTHDATE between '1.1.1970' and '1.7.1980'
+
+-- 3. За всеки актьор/актриса изведете броя на различните студиа, с които са 
+--    записвали филми, като не се интересуваме от тези, за които не е ясно
+--    в кои филми са се снимали.
+select STARNAME, COUNT(distinct STUDIONAME)
+from MOVIE join STARSIN on TITLE = MOVIETITLE and MOVIEYEAR = YEAR
+group by STARNAME
+
+-- 4. За всеки актьор/актриса изведете броя на различните студиа, с които са 
+--    записвали филми, като се интересуваме и от тези, за които не е ясно
+--    в кои филми са се снимали (0 студиа).
+select NAME, COUNT(distinct STUDIONAME)
+from STARSIN right join MOVIESTAR on STARNAME = NAME
+	 left join MOVIE on TITLE = MOVIETITLE and YEAR = MOVIEYEAR
+group by NAME
+
+-- 5. Изведете имената на актьорите, участвали в поне 2 филма след 1978 г.
+select STARNAME, COUNT(distinct MOVIETITLE)
+from STARSIN
+where MOVIEYEAR > 1978
+group by STARNAME
+having COUNT(distinct MOVIETITLE) >= 2
+
+-- 6. Изведете най-дългия филм (ако са няколко с еднаква максималната дължина -
+--    да се изведат всичките.
+select TITLE, LENGTH
+from MOVIE
+where LENGTH = (select MAX(LENGTH) from MOVIE)
+
+-- 7. Заглавията и годините на всички филми (без повторения), заснети преди 1982, 
+--    в които е играл поне един актьор/актриса, чието име не съдържа нито буквата
+--    'k', нито 'b'. Първо да се изведат най-старите филми.
+select distinct TITLE, YEAR
+from MOVIE join STARSIN on TITLE = MOVIETITLE and YEAR = MOVIEYEAR
+where YEAR < 1982 and STARNAME not like '%k%' and STARNAME not like '%b%'
+order by YEAR asc
+
+-- 8. Заглавието, годината и дължината на всички филми, които са от същото студио, 
+--    от което е и филма Terms of Endearment от 1983г., но дължината им е по-малка 
+--    от неговата или неизвестна.
+select *
+from MOVIE
+where STUDIONAME = 'MGM' and (LENGTH < 132 or LENGTH is null)
+
+SELECT *
+FROM MOVIE m
+	JOIN MOVIE mte ON  mte.TITLE = 'Terms of Endearment' 
+		AND mte.YEAR = 1983 AND m.STUDIONAME = mte.STUDIONAME
+WHERE m.LENGTH < mte.LENGTH OR m.LENGTH IS NULL
+
+-- 9. Имената на всички продуценти, които са и филмови звезди и са играли в поне 
+--    един филм преди 1980г. и поне един след 1985г.
+SELECT DISTINCT me.NAME
+FROM MOVIEEXEC me
+	JOIN MOVIESTAR ms ON me.NAME = ms.NAME
+	JOIN STARSIN sib ON sib.STARNAME = ms.NAME AND sib.MOVIEYEAR < 1980
+	JOIN STARSIN sia ON sia.STARNAME = ms.NAME AND sia.MOVIEYEAR > 1985
+		
+-- 10. Всички черно-бели филми, записани преди най-стария цветен филм 
+--     (InColor='y'/'n') на същото студио.
+select TITLE, YEAR
+from MOVIE m
+where INCOLOR = 'N' and  YEAR < (select MIN(YEAR) from MOVIE where INCOLOR = 'Y' and STUDIONAME = m.STUDIONAME)
+	   
+	  
