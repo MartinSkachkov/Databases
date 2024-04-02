@@ -109,3 +109,25 @@ select BATTLE, YEAR(DATE) as BATTLE_YEAR,
 		end) as DMG_COUNT
 from OUTCOMES join BATTLES on BATTLE = NAME
 group by BATTLE, DATE
+
+-- 10. Да се изведат имената на корабите, които са участвали в битки в
+--     продължение поне на две години.
+select SHIP
+from BATTLES join OUTCOMES on NAME = BATTLE
+group by SHIP
+having MAX(YEAR(DATE)) - MIN(YEAR(DATE)) >= 2
+
+-- 11. За всеки потънал кораб колко години са минали от пускането му на вода 
+--     до потъването.
+
+-- няма разлика ако result = 'sunk' е написано в условието на join-a или е в where калуза при *inner join*
+select SHIP, YEAR(DATE) - LAUNCHED as time_alive
+from SHIPS join OUTCOMES on NAME = SHIP and result = 'sunk'
+	 join BATTLES on BATTLE = BATTLES.NAME 
+
+-- 12. Имената на класовете, за които няма кораб, пуснат на вода след 1921 г., 
+--     но имат пуснат поне един кораб. 
+select CLASS
+from SHIPS
+group by CLASS
+having MAX(LAUNCHED) <= 1921
