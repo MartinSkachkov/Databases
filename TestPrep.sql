@@ -211,5 +211,91 @@ FROM MOVIEEXEC me
 select TITLE, YEAR
 from MOVIE m
 where INCOLOR = 'N' and  YEAR < (select MIN(YEAR) from MOVIE where INCOLOR = 'Y' and STUDIONAME = m.STUDIONAME)
-	   
-	  
+
+-- 11. Имената и адресите на студиата, които са работили с по-малко от 4 различни 
+--     филмови звезди. Студиа, за които няма посочени филми или има, но не се знае 
+--     кои актьори са играли в тях, също да бъдат изведени. 
+--     Първо да се изведат студиата, работили с най-много звезди. Например, ако 
+--     студиото има два филма, като в първия са играли A, B и C, а във втория - 
+--     C, D и Е, то студиото е работило с 5 звезди общо.
+select STUDIONAME, COUNT(distinct STARNAME) as dist_stars
+from MOVIE right join STUDIO on STUDIONAME = NAME -- Студиа, за които няма посочени филми или има
+		   left join STARSIN on TITLE = MOVIETITLE and YEAR = MOVIEYEAR -- кои актьори са играли (има и null)
+group by STUDIONAME
+having COUNT(distinct STARNAME) < 4 -- по-малко от 4 различни филмови звезди
+order by dist_stars desc
+
+-- 12. Компютрите, които са по-евтини от всеки лаптоп на същия производител.
+select *
+from product p join pc on p.model = pc.model
+where price < all (select price
+				   from product join laptop on product.model = laptop.model
+				   where maker = p.maker)
+order by maker
+
+-- 13. Компютрите, които са по-евтини от всеки лаптоп и принтер на същия производител.
+select *
+from product p join pc on p.model = pc.model
+where price < all (select MIN(price)
+				   from 
+						(select maker, laptop.model, price
+						from product join laptop on product.model = laptop.model
+						union all
+						select maker, printer.model, price
+						from product join printer on product.model = printer.model) t
+						where t.maker = p.model)
+
+SELECT product.maker, pc.model, pc.code, pc.price, mp.min_price
+FROM pc 
+	JOIN product ON pc.model = product.model
+	JOIN (SELECT ap.maker, MIN(ap.price) min_price
+              FROM (SELECT maker, price
+                  FROM product
+	               JOIN laptop ON product.model = laptop.model
+                  UNION 
+                  SELECT maker, price
+                  FROM product
+	               JOIN printer ON product.model = printer.model) ap
+              GROUP BY ap.maker) mp ON mp.maker = product.maker
+WHERE pc.price < mp.min_price
+ORDER BY maker
+
+-- 14. Да се изведат различните модели компютри, подредени по цена на най-скъпия 
+--     конкретен компютър от даден модел.
+use pc
+select model
+from pc
+group by model
+order by MAX(price)
+
+-- 15. Всички модели компютри, за които разликата в размера на най-големия и 
+--     най-малкия харддиск е поне 20 GB.
+select model, MAX(hd) - MIN(hd) as diff
+from pc
+group by model
+having MAX(hd) - MIN(hd) >= 20
+
+-- 16. За производителите на поне 2 лазерни принтера - броя на произвежданите PC-та
+select maker, (select COUNT(*) from product p2 join pc pc2 on p2.model = pc2.model where p2.maker = p.maker)
+from product p join printer r on p.model = r.model
+where r.type = 'Laser'
+
+-- 17. Да се изведат всички производители, за които средната цена на 
+-- произведените компютри е по-ниска от средната цена на техните лаптопи
+select maker
+from product p join pc on p.model = pc.model
+group by maker
+having AVG(price) < (select AVG(price)
+					 from product join laptop on product.model = laptop.model 
+					 where maker = p.maker)
+
+-- 18. Един модел компютри може да се предлага в няколко конфигурации 
+--     с евентуално различна цена. Да се изведат тези модели компютри,
+--     чиято средна цена (на различните му конфигурации) е по-ниска
+--     от най-евтиния лаптоп, произвеждан от същия производител.
+select p.model, AVG(price)
+from product p join pc on p.model = pc.model
+group by p.maker, p.model
+having AVG(price) < (select MIN(price)
+					 from product join laptop on product.model = laptop.model
+					 where maker = p.maker)
