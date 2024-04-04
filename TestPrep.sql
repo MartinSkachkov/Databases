@@ -299,3 +299,153 @@ group by p.maker, p.model
 having AVG(price) < (select MIN(price)
 					 from product join laptop on product.model = laptop.model
 					 where maker = p.maker)
+
+------------------------------------------------------------------------------------
+use ships
+
+-- 1. Имената и годините на пускане на всички кораби, които имат 
+--    същото име като своя клас.
+select NAME, LAUNCHED
+from SHIPS
+where NAME = CLASS
+
+-- 2. Имената на всички кораби, за които едновременно са изпълнени 
+--    следните условия: 
+--      1) участвали са в поне една битка
+--      2) имената на корабите започват с C или K
+select *
+from OUTCOMES -- 1)
+where SHIP like 'C%' or SHIP like 'K%' -- 2)
+
+-- 2. Имената на всички кораби, за които едновременно са изпълнени 
+--    следните условия: 
+--      1) участвали са в поне две битки
+--      2) имената на корабите започват с C или K
+select SHIP, COUNT(distinct BATTLE) as #ofbattles
+from OUTCOMES
+group by SHIP
+having COUNT(distinct BATTLE) >= 2 and (SHIP like 'C%' or SHIP like 'K%') -- 1) and 2)
+
+-- 3. Всички държави, които имат потънали в битка кораби.
+select distinct COUNTRY
+from (CLASSES join SHIPS on CLASSES.CLASS = SHIPS.CLASS)
+			  join OUTCOMES on NAME = SHIP
+where RESULT = 'sunk'
+
+-- 4. Всички държави, които нямат нито един потънал кораб.
+select distinct COUNTRY
+from CLASSES
+where COUNTRY not in (select distinct COUNTRY
+					  from (CLASSES join SHIPS on CLASSES.CLASS = SHIPS.CLASS)
+					  join OUTCOMES on NAME = SHIP and RESULT = 'sunk')
+
+SELECT c.COUNTRY
+FROM CLASSES c
+    LEFT OUTER JOIN SHIPS s ON c.CLASS = s.CLASS
+    LEFT OUTER JOIN OUTCOMES o ON s.NAME = o.SHIP AND o.RESULT = 'sunk'
+GROUP BY c.COUNTRY
+HAVING COUNT(o.RESULT) = 0
+
+-- 5. Имената на класовете, за които няма кораб, пуснат на вода 
+--    (launched) след 1921 г. Ако за класа няма пуснат никакъв кораб, 
+--    той също трябва да излезе в резултата.
+select CLASS
+from CLASSES
+where CLASS not in (select distinct CLASS
+					from SHIPS
+					where LAUNCHED > 1921)
+
+-- 6. Името, държавата и калибъра (bore) на всички класове кораби 
+--    с 6, 8 или 10 оръдия. Калибърът да се изведе в сантиметри 
+--    (1 инч е приблизително 2.54 см).
+select distinct NAME, COUNTRY, BORE * 2.54 as BORECM 
+from CLASSES join SHIPS on CLASSES.CLASS = SHIPS.CLASS
+where NUMGUNS in (6, 8, 10) -- NUMGUNS = 6 or NUMGUNS = 8 or NUMGUNS = 10
+
+-- 7. Държавите, които имат класове с различен калибър (напр. САЩ 
+--    имат клас с 14 калибър и класове с 16 калибър, докато Великобритания 
+--    има само класове с 15).
+select COUNTRY, COUNT(distinct BORE)
+from CLASSES
+group by COUNTRY
+having COUNT(distinct BORE) > 1
+
+SELECT *
+FROM CLASSES c1
+	JOIN CLASSES c2 ON c1.COUNTRY = c2.COUNTRY AND c1.BORE != c2.BORE
+
+-- 8. Страните, които произвеждат кораби с най-голям брой оръдия (numguns).
+select distinct COUNTRY
+from CLASSES
+where NUMGUNS = (select MAX(NUMGUNS) from CLASSES)
+
+-- 9. Намерете броя на потъналите американски кораби за всяка проведена 
+--    битка с поне един потънал американски кораб.
+select BATTLE, COUNT(distinct SHIP)
+from (CLASSES join SHIPS on CLASSES.CLASS = SHIPS.CLASS)
+			  join OUTCOMES on NAME = SHIP and RESULT = 'sunk' and COUNTRY = 'USA'
+group by BATTLE
+
+-- 10. Намерете имената на битките, в които са участвали поне 3 кораба с 
+-- под 9 оръдия и от тях поне два са с резултат 'ok'.
+select BATTLE
+from (select distinct NAME
+	  from CLASSES join SHIPS on CLASSES.CLASS = SHIPS.CLASS
+	  where NUMGUNS < 9) as ship_guns
+	  join OUTCOMES on ship_guns.NAME = SHIP
+group by BATTLE
+having COUNT(*) >= 3 and SUM(CASE RESULT when 'ok' then 1 else 0 end) >= 2
+
+SELECT o.BATTLE
+FROM OUTCOMES o
+	JOIN SHIPS s ON o.SHIP = s.NAME
+	JOIN CLASSES c ON c.CLASS = s.CLASS
+WHERE c.NUMGUNS < 9 
+GROUP BY o.BATTLE
+HAVING COUNT(*) >= 3 AND SUM(CASE o.RESULT WHEN 'ok' THEN 1 ELSE 0 END) >= 2
+
+-- 11. За всеки кораб, който е от клас с име, несъдържащо буквите i и k, 
+--     да се изведе името на кораба и през коя година е пуснат на вода. 
+--     Резултатът да бъде сортиран така, че първо да се извеждат най-скоро 
+--     пуснатите кораби.
+select NAME, CLASS, LAUNCHED
+from SHIPS
+where CLASS not like '%i%' and CLASS not like '%k%' --CLASS in (select CLASS from CLASSES where CLASS not like '%i%' and CLASS not like '%k%')
+order by LAUNCHED desc	
+
+-- 12. Да се изведат имената на всички битки, в които е потънал поне 
+--     един японски кораб.
+select distinct BATTLE
+from (CLASSES join SHIPS on CLASSES.CLASS = SHIPS.CLASS)
+			  join OUTCOMES on NAME = SHIP and COUNTRY = 'Japan' and RESULT = 'sunk'
+
+-- 13. Да се изведат имената и класовете на всички кораби, пуснати на 
+--     вода една година след кораба 'Rodney' и броят на оръдията им е 
+--     по-голям от средния брой оръдия на класовете, произвеждани от 
+--     тяхната страна.
+select NAME, c.CLASS
+from SHIPS join CLASSES c on SHIPS.CLASS = c.CLASS 
+where LAUNCHED = (select LAUNCHED from SHIPS where NAME = 'Rodney') + 1 -- една година след кораба 'Rodney'
+	  and NUMGUNS > (select AVG(NUMGUNS) from CLASSES where COUNTRY = c.COUNTRY) -- броят на оръдията им е 
+																				 -- по-голям от средния брой оръдия на класовете, произвеждани от 
+																				 -- тяхната страна.
+
+-- 14. Да се изведат американските класове, за които всички техни кораби 
+--     са пуснати на вода в рамките на поне 10 години (например кораби от 
+--     клас North Carolina са пускани в периода от 1911 до 1941, което е 
+--     повече от 10 години, докато кораби от клас Tennessee са пуснати 
+--     само през 1920 и 1921 г.).
+select CLASSES.CLASS
+from CLASSES join SHIPS on CLASSES.CLASS = SHIPS.CLASS
+where COUNTRY = 'USA'
+group by CLASSES.CLASS
+having MAX(LAUNCHED) - MIN(LAUNCHED) >= 10
+
+-- 15. За всяка държава да се изведе: броят на корабите от тази държава; 
+--     броя на битките, в които е участвала; броя на битките, в които 
+--     неин кораб е потънал ('sunk') (ако някоя от бройките е 0 – да се 
+--     извежда 0).
+select COUNTRY, COUNT(distinct NAME) as #ships, COUNT(distinct BATTLE) as #battles, SUM(case RESULT when 'sunk' then 1 else 0 end) as #sunk
+from CLASSES left join SHIPS on CLASSES.CLASS = SHIPS.CLASS
+			 left join OUTCOMES on NAME = SHIP
+group by COUNTRY
