@@ -510,7 +510,7 @@ use ships
 -- Да се напише заявка, която извежда име и държава на всички кораби, които никога
 -- не са потъвали в битка (може и да не са участвали)
 select distinct NAME, COUNTRY
-from (CLASSES right join SHIPS on CLASSES.CLASS = SHIPS.CLASS)
+from (CLASSES join SHIPS on CLASSES.CLASS = SHIPS.CLASS)
 			  left join OUTCOMES on NAME = SHIP
 where RESULT != 'sunk' or RESULT is null
 
