@@ -1,3 +1,17 @@
+```
+CREATE TABLE table_name (  
+	column1 datatype,
+	column2 datatype,
+	...
+)
+```
+**DROP TABLE <table_name>** - изтриване на цялата таблица
+**DELETE FROM <table_name>** - изтриване само на инфромацията в таблицата
+**CREATE DATABASE <database_name>** - създаване на база данни
+**DROP DATABASE <database_name>** - изтриване на база данни (необходимо е да няма отворени връзки към базата от клиенти (това включва и връзката, която се опитва да изтрие базата; т.е. нужно е с **USE** да се премине към използване на друга база, ако се намираме в контекста на тази, която искаме да изтриеме))
+**ALTER TABLE <table_name> ADD <column_name> <type_name>**
+**ALTER TABLE <table_name> DROP COLUMN <column_name>**
+
 ### DEFAULT
 ```sql
 CREATE TABLE Person (
@@ -21,12 +35,21 @@ ADD WorkFax varchar(32)
 CONSTRAINT DF_WorkFax DEFAULT '+359-2-292831' WITH VALUES
 ```
 
-DEFAULT ограничение може да бъде добавено за съществуваща колона с ALTER TABLE. Например,
-може да създадеме DEFAULT ограничение за колоната Name, което да задава стойност по подразбиране празен низ по следния начин:
+DEFAULT ограничение може да бъде добавено за съществуваща колона с ALTER TABLE. Например, може да създадеме DEFAULT ограничение за колоната Name, което да задава стойност по подразбиране празен низ по следния начин:
 ```sql
 ALTER TABLE Person
 ADD CONSTRAINT DF_Name DEFAULT '' FOR Name
 ```
+По подразбиране, колоните допускат NULL стойности. Ако искаме да ограничиме това, в описанието на колона може да добавиме NOT NULL. Например:
+```sql
+CREATE TABLE Person (
+     ID int NOT NULL,
+     Name varchar(64) NOT NULL,
+     WorkPhone varchar(32) NOT NULL
+     CONSTRAINT DF_WorkPhone DEFAULT '+359-2-8161500'
+)
+```
+
 --------------------------------------------------------------------------------------
 
 ### PRIMARY KEY
@@ -91,3 +114,28 @@ ALTER TABLE Student
 ADD CONSTRAINT CHK_Student_FacultyNumber CHECK (FacultyNumber > 0),
     CONSTRAINT CHK_Student_Email CHECK (EmailAddress LIKE '%@%.%')
    ```
+   ---
+  
+### FOREIGN KEY
+FOREIGN KEY ограниченията се създават за колона/колони от таблица, които се използват за рефериране към първичен ключ в друга таблица.
+В колона/колони, за които има създадено FOREIGN KEY ограничение е възможно да има NULL стойности (освен ако не са NOT NULL). FOREIGN KEY ограничението не налага уникалност по отношение на колоната/колоните, за които е дефинирано.
+```sql
+CREATE TABLE StarsIn (  
+     MovieTitle varchar(32),  
+     MovieYear int,  
+     StarName varchar(32) REFERENCES MovieStar(Name),  
+     
+     CONSTRAINT FK_StarsIn_Movie FOREIGN KEY (MovieTitle, MovieYear) REFERENCES Movie(Title, Year)  
+**)
+``` 
+---
+  
+### IDENTITY
+Стойностите в колона, за която е зададено IDENTITY(1,1), ще бъдат автоматично попълвани от сървъра с естествени числа (започва с 1 и увеличаване с 1 на всяка следваща стъпка).
+```sql
+CREATE TABLE Person (  
+     ID int IDENTITY(1,1) PRIMARY KEY,  
+     Name varchar(64),  
+     Email varchar(64)  
+)
+```
