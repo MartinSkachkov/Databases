@@ -1,3 +1,4 @@
+```sql
 use ships
 go
 
@@ -117,3 +118,4 @@ create view BattleList as
 go
 
 select * from BattleList
+```
