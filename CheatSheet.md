@@ -120,3 +120,21 @@ GO;
 ```sql
 DROP TRIGGER trigger_name;
 ```
+
+## Използване на  `CASE WHEN`  в SQL
+
+```sql
+SELECT employee_id,
+    CASE 
+        WHEN salary > 50000 THEN 'High'
+        ELSE 'Low'
+    END as salary_category
+FROM employees;
+```
+
+## Използване на  `CASE WHEN`  с агрегатни функции
+
+```sql
+SELECT AVG(CASE WHEN salary > 50000 THEN salary ELSE NULL END) as AverageHighSalary
+FROM employees;
+```
