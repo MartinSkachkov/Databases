@@ -32,4 +32,20 @@ go
 
 select * from technika
 
+----------------------------------------------------------------------------------
+use ships
 
+begin transaction
+
+create trigger ShipsTrig on SHIPS
+after insert, update
+as
+begin
+	if exists(select *
+			  from classes join ships on classes.class = ships.class
+			  where launched > 1944 and numguns < 10)
+		throw 50001, 'Invalid data', 1
+end
+go
+
+rollback
